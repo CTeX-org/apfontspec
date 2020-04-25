@@ -1,0 +1,725 @@
+% \iffalse meta-comment
+% !TeX program  = XeLaTeX
+% !TeX encoding = UTF-8
+%<*internal>
+\iffalse
+%</internal>
+%<*readme>
+apfontspec
+==========
+
+The `apfontspec` package provides an similar interface to `fontspec`
+package for loading CJK fonts in [ApLaTeX](https://github.com/clerkma/ptex-ng).
+
+Basic Usage
+-----------
+The package provides the following commands to define a CJK font family:
+
+    \setCJKmainfont{<font name>}[<font options>]
+    \setCJKsansfont{<font name>}[<font options>]
+    \setCJKmonofont{<font name>}[<font options>]
+    \setCJKfamilyfont{<font family>}{<font name>}[<font options>]
+    \newCJKfontfamily\<font switch>{<font name>}[<font options>]
+    \CJKfontspec{<font name>}[<font options>]
+    \defaultCJKfontfeatures{<default font options>}
+    \addCJKfontfeatures{<font options to add>}
+
+You can read the package manual (in Chinese) for more detailed explanations.
+
+Contributing
+------------
+
+[Issues](https://github.com/CTeX-org/apfontspec/issues) and
+[pull requests](https://github.com/CTeX-org/apfontspec/pulls)
+are always welcome.
+
+Copyright and Licence
+---------------------
+
+    Copyright (C) 2020 by Qing Lee <sobenlee@gmail.com>
+    -----------------------------------------------------------------
+
+    This work may be distributed and/or modified under the
+    conditions of the LaTeX Project Public License, either
+    version 1.3c of this license or (at your option) any later
+    version. This version of this license is in
+       http://www.latex-project.org/lppl/lppl-1-3c.txt
+    and the latest version of this license is in
+       http://www.latex-project.org/lppl.txt
+    and version 1.3 or later is part of all distributions of
+    LaTeX version 2005/12/01 or later.
+
+    This work has the LPPL maintenance status "maintained".
+
+    The Current Maintainer of this work is Qing Lee.
+
+    This package consists of the file  apfontspec.dtx,
+                 and the derived files apfontspec.pdf,
+                                       apfontspec.sty,
+                                       apfontspec.ins and
+                                       README.md (this file).
+%</readme>
+%<*internal>
+\fi
+\begingroup
+  \def\temp{LaTeX2e}
+\expandafter\endgroup\ifx\temp\fmtname\else
+\csname fi\endcsname
+%</internal>
+%<*install>
+
+\input ctxdocstrip %
+
+\preamble
+
+    Copyright (C) by Qing Lee <sobenlee@gmail.com>
+-----------------------------------------------------------------
+
+    This work may be distributed and/or modified under the
+    conditions of the LaTeX Project Public License, either
+    version 1.3c of this license or (at your option) any later
+    version. This version of this license is in
+       http://www.latex-project.org/lppl/lppl-1-3c.txt
+    and the latest version of this license is in
+       http://www.latex-project.org/lppl.txt
+    and version 1.3 or later is part of all distributions of
+    LaTeX version 2005/12/01 or later.
+
+    This work has the LPPL maintenance status "maintained".
+
+    The Current Maintainer of this work is Qing Lee.
+
+-----------------------------------------------------------------
+
+\endpreamble
+
+\postamble
+
+    This work consists of the file  apfontspec.dtx,
+              and the derived files apfontspec.pdf,
+                                    apfontspec.sty,
+                                    apfontspec.ins and
+                                    README.md.
+\endpostamble
+
+\generate
+  {
+%</install>
+%<*internal>
+    \usedir{source/uplatex/apfontspec}
+    \file{apfontspec.ins} {\from{\jobname.dtx}{install}}
+%</internal>
+%<*install>
+    \usedir{tex/uplatex/apfontspec}
+    \file{apfontspec.sty} {\from{\jobname.dtx}{package}}
+    \nopreamble\nopostamble
+    \usedir{doc/uplatex/apfontspec}
+    \file{README.md}      {\from{\jobname.dtx}{readme}}
+  }
+
+\endbatchfile
+%</install>
+%<*internal>
+\fi
+%</internal>
+%<package>\NeedsTeXFormat{LaTeX2e}
+%<package>\RequirePackage{expl3}
+%<+package>\GetIdInfo$Id$
+%<package>  {CJK Font selection for ApLaTeX}
+%<package>\ProvidesExplPackage{\ExplFileName}
+%<package>  {\ExplFileDate}{0}{\ExplFileDescription}
+%<*driver>
+\documentclass{ctxdoc}
+\ExplSyntaxOn
+\DeclareDocumentCommand \gitsha { m }
+  {
+    \href { https \c_colon_str //github.com/CTeX-org/apfontspec/#1 }
+          { rev. \texttt{#1} }
+  }
+\ExplSyntaxOff
+\begin{document}
+  \DocInput{\jobname.dtx}
+  \IndexLayout
+  \PrintIndex
+\end{document}
+%</driver>
+% \fi
+%
+% \CheckSum{307}
+% \GetFileId{apfontspec.sty}
+%
+% \title{\bfseries\pkg{apfontspec} 宏包}
+% \author{李清}
+% \date{\ExplFileDate\thanks{\gitsha{\ExplFileVersion}.}}
+% \maketitle
+%
+%
+% \begin{abstract}
+%
+% \pkg{apfontspec} 宏包提供了 \ApLaTeX 格式下的比较方便的 CJK 字体设置界面。
+% 界面的语法形式与 \pkg{fontspec} 宏包类似。
+%
+% \end{abstract}
+%
+% \begin{documentation}
+%
+% \end{documentation}
+%
+%
+% \StopEventually{}
+%
+%
+%\begin{implementation}
+%
+% \section{代码实现}
+%
+%    \begin{macrocode}
+%<*package>
+%    \end{macrocode}
+%
+%    \begin{macrocode}
+%<@@=apfs>
+%    \end{macrocode}
+%
+%    \begin{macrocode}
+\prop_gput:Nnn \g_msg_module_name_prop { apfs } { apfontspec }
+%    \end{macrocode}
+%
+% 检查是否为 \ApLaTeX。
+%    \begin{macrocode}
+\msg_new:nnn { apfs } { aptex-required }
+  {
+    The~apfontspec~package~requires~engine~ApTeX.\\\\
+    You~must~change~your~typesetting~engine~to~`aplatex'.\\
+    Loading~apfontspec~will~abort!
+  }
+\cs_if_exist:NF \ngbanner
+  { \msg_critical:nn { apfs } { aptex-required } }
+%    \end{macrocode}
+%
+%    \begin{macrocode}
+\RequirePackage { xparse }
+%    \end{macrocode}
+%
+% \begin{variable}[int]{\l_@@_tmp_tl}
+% 临时变量。
+%    \begin{macrocode}
+\tl_new:N \l_@@_tmp_tl
+%    \end{macrocode}
+% \end{variable}
+%
+% \begin{macro}{\apfs_nfss_declare_family:nnn,
+% \apfs_nfss_declare_shape:nnnnnn}
+% \pkg{NFSS} 字体命令的宏包内部函数。
+%    \begin{macrocode}
+\cs_new_protected:Npn \apfs_nfss_declare_family:nnn
+  { \DeclareKanjiFamily }
+\cs_new_protected:Npn \apfs_nfss_declare_shape:nnnnnn
+  { \DeclareFontShape@ }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\apfs_define:n, \apfs_set:n,
+%  \apfs_set_filter:nnN, \apfs_set_features:n}
+%    \begin{macrocode}
+\cs_new_protected:Npn \apfs_define:n
+  { \keys_define:nn { apfs } }
+\cs_new_protected:Npn \apfs_set:n
+  { \keys_set:nn { apfs } }
+\cs_new_protected:Npn \apfs_set_filter:nnN
+  { \keys_set_filter:nnnN { apfs } }
+\cs_new_protected:Npn \apfs_set_features:n
+  { \keys_set_groups:nnn { apfs } { feature } }
+\cs_generate_variant:Nn \apfs_set_features:n { o }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{variable}[int]{\c_@@_prefix_tl}
+% 保存字体前缀，固定为 |ot:|。
+%    \begin{macrocode}
+\tl_const:Nn \c_@@_prefix_tl { ot: }
+%    \end{macrocode}
+% \end{variable}
+%
+% \begin{variable}[int]{\l_@@_yoko_encoding_tl,\l_@@_tate_encoding_tl}
+% 保存横排与直排字体的 \pkg{NFSS} 编码名字，初始化为 |JY2| 和 |JT2|。
+%    \begin{macrocode}
+\tl_new:N \l_@@_yoko_encoding_tl
+\tl_new:N \l_@@_tate_encoding_tl
+\tl_set:Nn \l_@@_yoko_encoding_tl { JY2 }
+\tl_set:Nn \l_@@_tate_encoding_tl { JT2 }
+%    \end{macrocode}
+% \end{variable}
+%
+% \begin{variable}[int]{\l_@@_yoko_font_tl,\l_@@_tate_font_tl}
+% 保存横排与直排字体的文件名。
+%    \begin{macrocode}
+\tl_new:N \l_@@_yoko_font_tl
+\tl_new:N \l_@@_tate_font_tl
+%    \end{macrocode}
+% \end{variable}
+%
+% \begin{variable}[int]{\l_@@_option_tl}
+% 保存字体选项列表，用于随后定义。
+%    \begin{macrocode}
+\tl_new:N \l_@@_option_tl
+%    \end{macrocode}
+% \end{variable}
+%
+% \begin{macro}{NFSSEncoding}
+% 设置字体的 \pkg{NFSS} 编码名字。
+%    \begin{macrocode}
+\apfs_define:n { NFSSEncoding .code:n = \@@_assign:nn { encoding } {#1} }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{Font}
+% 用于实现 \opt{FontFace} 选项中的 \opt{Font}。
+%    \begin{macrocode}
+\keys_define:nn { apfs / fontname }
+  {
+    Font  .tl_set:N = \l_@@_fontname_tl ,
+    Font .initial:n = \q_no_value
+  }
+\cs_new_protected:Npn \@@_extract_fontname:nN
+  { \keys_set_known:nnN { apfs / fontname } }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}[int]{\apfs_new_feature:nn}
+% 定义字体选项，有横排和直排字体两种形式。|#1| 是选项名称，|#2| 用于命名内部 tl 变量。
+%    \begin{macrocode}
+\cs_new_protected:Npn \apfs_new_feature:nn #1#2
+  {
+    \tl_new:c { l_@@_yoko_ #2 _tl }
+    \tl_new:c { l_@@_tate_ #2 _tl }
+    \apfs_define_feature:nn {#1} {#2}
+  }
+\cs_new_protected:Npn \apfs_define_feature:nn #1#2
+  {
+    \apfs_define:n
+      {
+        #1 .code:n   = \@@_assign:nn {#2} { ##1 } ,
+        #1 .groups:n = feature
+      }
+  }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{Index,Script,Language,RawFeature,Scale,JFM,LoadingSetting}
+% 设置 \file{.ttc} 字体的索引。
+%    \begin{macrocode}
+\apfs_new_feature:nn { Index }          { index }
+\apfs_new_feature:nn { Script }         { script }
+\apfs_new_feature:nn { Language }       { language }
+\apfs_new_feature:nn { RawFeature }     { feature }
+\apfs_new_feature:nn { Scale }          { scale }
+\apfs_new_feature:nn { JFM }            { jfm }
+\apfs_new_feature:nn { Extension }      { ext }
+\apfs_new_feature:nn { LoadingSetting } { loading }
+%    \end{macrocode}
+% \end{macro}
+%
+% 定义选项。
+%    \begin{macrocode}
+\apfs_define:n
+  {
+    FontFace            .code:n = \@@_save_fontface:nnn #1 ,
+    UprightFont         .code:n = \@@_save_shape:nnn { md } { shape } {#1} ,
+    ItalicFont          .code:n = \@@_save_shape:nnn { md } { it } {#1} ,
+    SlantedFont         .code:n = \@@_save_shape:nnn { md } { sl } {#1} ,
+    BoldFont            .code:n = \@@_save_shape:nnn { bf } { shape } {#1} ,
+    BoldItalicFont      .code:n = \@@_save_shape:nnn { bf } { it } {#1} ,
+    BoldSlantedFont     .code:n = \@@_save_shape:nnn { bf } { sl } {#1} ,
+    UprightFeatures     .code:n = \@@_save_features:nnn { md } { shape } {#1} ,
+    ItalicFeatures      .code:n = \@@_save_features:nnn { md } { it } {#1} ,
+    SlantedFeatures     .code:n = \@@_save_features:nnn { md } { sl } {#1} ,
+    BoldFeatures        .code:n = \@@_save_features:nnn { bf } { shape } {#1} ,
+    BoldItalicFeatures  .code:n = \@@_save_features:nnn { bf } { it } {#1} ,
+    BoldSlantedFeatures .code:n = \@@_save_features:nnn { bf } { sl } {#1}
+  }
+%    \end{macrocode}
+%
+% \begin{macro}{\@@_semicolon_assign:NNn}
+% 将参数 |#3| 中分号前后的内容分别赋值到变量 |#1| 和 |#2| 中。
+% 若内容相同，则分号可以省略。若内容为 |-|，则不改变对应变量的当前值。
+%    \begin{macrocode}
+\cs_new_protected:Npn \@@_semicolon_assign:NNn #1#2#3
+  { \@@_assign_auxi:w #3 ; \q_no_value ; \q_stop #1#2 }
+\cs_new_protected:Npn \@@_assign_auxi:w #1 ; #2 ; #3 \q_stop
+  {
+    \use:x
+      {
+        \@@_assign_auxii:nnNN
+          { \tl_trim_spaces:n {#1} }
+          { \tl_trim_spaces:n {#2} }
+      }
+  }
+\cs_new_protected:Npn \@@_assign_auxii:nnNN #1#2#3#4
+  {
+    \str_if_eq:nnF {#1} { - } { \tl_set:Nn #3 {#1} }
+    \quark_if_no_value:nTF {#2}
+      { \str_if_eq:nnF {#1} { - } { \tl_set_eq:NN #4#3 } }
+      { \str_if_eq:nnF {#2} { - } { \tl_set:Nn #4 {#2} } }
+  }
+\cs_generate_variant:Nn \@@_semicolon_assign:NNn { cc }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\@@_assign:nn}
+% 同时保存横排与直排的变量值。
+%    \begin{macrocode}
+\cs_new_protected:Npn \@@_assign:nn #1
+  {
+    \@@_semicolon_assign:ccn
+      { l_@@_yoko_ #1 _tl }
+      { l_@@_tate_ #1 _tl }
+  }
+\cs_generate_variant:Nn \@@_assign:nn { no }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\@@_assign_font:nn}
+% 先将 |*| 号替换掉。
+%    \begin{macrocode}
+\cs_new_protected:Npn \@@_assign_font:nn #1#2
+  {
+    \str_if_eq:nnTF {#1} {#2}
+      { \@@_assign:nn { font } {#1} }
+      {
+        \tl_if_blank:nTF {#1}
+          { \@@_assign:nn { font } {#2} }
+          { \@@_replace_font:nn {#1} {#2} }
+      }
+  }
+\cs_new_protected:Npn \@@_replace_font:nn #1#2
+  {
+    \tl_set:Nn \l_@@_tmp_tl {#1}
+    \tl_replace_all:Nnn \l_@@_tmp_tl { * } {#2}
+    \@@_assign:no { font } { \l_@@_tmp_tl }
+  }
+\cs_generate_variant:Nn \@@_assign_font:nn { o }
+%    \end{macrocode}
+% \end{macro}
+
+% \begin{macro}{\@@_save_fontface:nnn}
+% 保存 \opt{FontFace} 选项的值。\opt{FontFace} 选项的格式与 \pkg{fontspec} 一致。
+% \begin{quote}\ttfamily
+%   FontFace = \Arg{series}\Arg{shape}\Arg{file name}\\
+%   FontFace = \Arg{series}\Arg{shape}\{ Font = \meta{file name} , \meta{features} \}
+% \end{quote}
+%    \begin{macrocode}
+\cs_new_protected:Npn \@@_save_fontface:nnn
+  { \@@_save_shape:Nnnn \c_true_bool }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\@@_save_shape:Nnnn}
+% 将选项中设置的字形保存到表中，布尔变量 |#1| 用于标识字形是否是由 \opt{FontFace} 设置的。
+%    \begin{macrocode}
+\cs_new_protected:Npn \@@_save_shape:Nnnn #1#2#3#4
+  { \prop_put:Nnn \l_@@_shape_prop { #2/#3 } { #1 {#2} {#3} {#4} } }
+\prop_new:N \l_@@_shape_prop
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\@@_save_shape:nnn}
+% \begin{variable}[int]{\l_@@_shape_prop}
+% 将 \opt{BoldFont} 等选项的值保存到表中。
+%    \begin{macrocode}
+\cs_new_protected:Npn \@@_save_shape:nnn
+  {
+    \@@_save_shape_aux:nnn
+      { \@@_save_shape:Nnnn \c_false_bool }
+  }
+%    \end{macrocode}
+% \end{variable}
+% \end{macro}
+
+% \begin{macro}{\@@_save_features:nnn}
+% \begin{variable}[int]{\l_@@_features_prop}
+% 将 \opt{BoldFeatures} 等选项的值保存到表中。
+%    \begin{macrocode}
+\cs_new_protected:Npn \@@_save_features:nnn
+  {
+    \@@_save_shape_aux:nnn
+      { \@@_save_features_aux:nnn }
+  }
+\cs_new_protected:Npn \@@_save_features_aux:nnn #1#2#3
+  { \prop_put:Nnn \l_@@_features_prop { #1/#2 } {#3} }
+\prop_new:N \l_@@_features_prop
+%    \end{macrocode}
+% \end{variable}
+% \end{macro}
+%
+% \begin{macro}{\@@_save_shape_aux:nnn}
+% 辅助函数，用于展开 \tn{bfdefault} 等。
+%    \begin{macrocode}
+\cs_new_protected:Npn \@@_save_shape_aux:nnn #1#2#3
+  {
+    \use:x
+      {
+        \exp_not:n {#1}
+          { \use:c { #2 default } }
+          { \use:c { #3 default } }
+      }
+  }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}[int]{\apfs_set_family:nnn}
+% 主要函数。
+%    \begin{macrocode}
+\cs_new_protected:Npn \apfs_set_family:nnn #1#2#3
+  {
+    \group_begin:
+      \tl_set:Nn \l_@@_family_tl {#1}
+      \@@_save_shape:nnn { md } { shape } {#3}
+      \tl_if_blank:nF {#2} { \apfs_set:n {#2} }
+      \@@_declare_family:nn {#2} {#3}
+      \@@_declare_shape:n {#3}
+    \group_end:
+  }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\@@_declare_family:nn}
+% 同时声明横排和直排汉字字体族。
+%    \begin{macrocode}
+\cs_new_protected:Npn \@@_declare_family:nn #1#2
+  {
+    \@@_check_duplicate:o { \l_@@_family_tl }
+    \@@_declare_family_aux:n { yoko }
+    \@@_declare_family_aux:n { tate }
+  }
+\cs_new_protected:Npn \@@_declare_family_aux:n #1
+  {
+    \use:x
+      {
+        \apfs_nfss_declare_family:nnn
+          { \use:c { l_@@_ #1 _encoding_tl } }
+          { \l_@@_family_tl }
+          { \exp_not:v { l_@@_ #1 _loading_tl } }
+      }
+    \tl_clear:c { l_@@_ #1 _loading_tl }
+  }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\@@_check_duplicate:n}
+%    \begin{macrocode}
+\cs_new_protected:Npn \@@_check_duplicate:n #1
+  { }
+\cs_generate_variant:Nn \@@_check_duplicate:n { o }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}[int]{\@@_declare_shape:n}
+% 设置表中的字形。
+%    \begin{macrocode}
+\cs_new_protected:Npn \@@_declare_shape:n #1
+  {
+    \prop_map_inline:Nn \l_@@_shape_prop
+      { \@@_declare_shape:nNnnnn { ##1 } ##2 {#1} }
+  }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}[int]{\@@_declare_shape:Nnnnn}
+% 实际声明字形。
+%    \begin{macrocode}
+\cs_new_protected:Npn \@@_declare_shape:nNnnnn #1#2#3#4#5#6
+  {
+    \group_begin:
+      \bool_if:NTF #2
+        { \@@_assign_fontface:nn }
+        { \@@_assign_shape:nnn {#1} }
+        {#5} {#6}
+      \@@_adjust_jfm:
+      \@@_declare_shape:nnn { yoko } {#3} {#4}
+      \@@_declare_shape:nnn { tate } {#3} {#4}
+    \group_end:
+  }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\@@_assign_fontface:nn}
+% 实现 \opt{FontFace} 选项。
+%    \begin{macrocode}
+\cs_new_protected:Npn \@@_assign_fontface:nn #1#2
+  {
+    \@@_extract_fontname:nN {#1} \l_@@_leftover_clist
+    \quark_if_no_value:NTF \l_@@_fontname_tl
+      { \@@_assign_font:nn {#1} {#2} }
+      {
+        \@@_assign_font:on { \l_@@_fontname_tl } {#2}
+        \clist_if_empty:NF \l_@@_leftover_clist
+          { \apfs_set_features:o { \l_@@_leftover_clist } }
+      }
+  }
+\clist_new:N \l_@@_leftover_clist
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\@@_assign_shape:nnnn}
+% 实现 \opt{BoldFont} 等选项。
+%    \begin{macrocode}
+\cs_new_protected:Npn \@@_assign_shape:nnn #1#2#3
+  {
+    \@@_assign_font:nn {#2} {#3}
+    \prop_get:NnNT \l_@@_features_prop {#1} \l_@@_tmp_tl
+      {
+        \tl_if_empty:NF \l_@@_tmp_tl
+          { \apfs_set_features:o { \l_@@_tmp_tl } }
+      }
+  }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\@@_adjust_jfm:}
+% 如果横排和直排字体的 \opt{JFM} 设置相同，则相应加上 |-h| 和 |-v|。
+%    \begin{macrocode}
+\cs_new_protected:Npn \@@_adjust_jfm:
+  {
+    \tl_if_eq:NNT \l_@@_yoko_jfm_tl \l_@@_tate_jfm_tl
+      {
+        \tl_put_right:Nn \l_@@_yoko_jfm_tl { -h }
+        \tl_put_right:Nn \l_@@_tate_jfm_tl { -v }
+      }
+  }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\@@_declare_shape:nnn}
+% 最后将参数传给 \pkg{NFSS} 的命令。
+%    \begin{macrocode}
+\cs_new_protected:Npn \@@_declare_shape:nnn #1#2#3
+  {
+    \exp_args:Ncc \@@_process_extension:NN
+      { l_@@_ #1 _font_tl }
+      { l_@@_ #1 _ext_tl }
+    \use:x
+      {
+        \@@_construct_fontname:nnnnnnn
+          { \exp_not:v { l_@@_ #1 _scale_tl } }
+          { \use:c { l_@@_ #1 _font_tl } }
+          { \exp_not:v { l_@@_ #1 _index_tl } }
+          { \use:c { l_@@_ #1 _script_tl } }
+          { \use:c { l_@@_ #1 _language_tl } }
+          { \use:c { l_@@_ #1 _feature_tl } }
+          { \use:c { l_@@_ #1 _jfm_tl } }
+      }
+    \use:x
+      {
+        \apfs_nfss_declare_shape:nnnnnn
+          { \use:c { l_@@_ #1 _encoding_tl } }
+          { \l_@@_family_tl }
+          {#2}
+          {#3}
+          { \exp_not:o { \l_@@_loading_info_tl } }
+          { \exp_not:v { l_@@_ #1 _loading_tl } }
+       }
+  }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\@@_construct_fontname:nnnnnnn}
+% \ApTeX 的 \tn{jfont} 和 \tn{tfont} 语法如下^^A
+% \footnote{\url{https://github.com/clerkma/ptex-ng/blob/master/src/test/test-otf-features.tex}}。
+% \begin{verbatim}
+% syntax:
+%   \jfont\t=name
+%   name        = "ot:" file_name file_index? script_lang? gsub_spec? ":" jfm_name
+%   file_index  = "[" number "]"
+%   script_lang = "(" script? lang? ")"
+%   script      = script_tag
+%   lang        = "/" lang_tag
+%   gsub_spec   = ";" fea_list
+%   fea_list    = (fea_tag ",")* [fea_tag | "*"]
+%
+%   script_tag: https://www.microsoft.com/typography/otspec/scripttags.htm
+%   lang_tag:   https://www.microsoft.com/typography/otspec/languagetags.htm
+%   fea_tag:    https://www.microsoft.com/typography/otspec/featuretags.htm
+%
+%   '*' for all gsub featurs
+% examples:
+%   \jfont\t=ot:yumin.ttf;jp90,hojo:upjisr-h
+%   \tfont\t=ot:yumin.ttf;vert:upjisr-v
+%   \jfont\t=ot:simsun.ttc[1]:upjisr-h
+%   \jfont\t=ot:SourceHanSansTC-Normal.otf:uprml-h
+% \end{verbatim}
+%    \begin{macrocode}
+\cs_new_protected:Npn \@@_construct_fontname:nnnnnnn #1#2#3#4#5#6#7
+  {
+    \tl_set:Nx \l_@@_loading_info_tl
+      {
+        <->
+        \c_@@_prefix_tl
+        \tl_if_empty:nF {#1} { s * [ \fp_eval:n {#1} ] }
+        #2
+        \tl_if_empty:nF {#3} { [ \int_eval:n {#3} ] }
+        \tl_if_empty:nF { #4#5 }
+          { ( #4 \tl_if_empty:nF {#5} { / #5 } ) }
+        \tl_if_empty:nF {#6} { ; #6 }
+        : #7
+      }
+  }
+\tl_new:N \l_@@_font_info_tl
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\@@_process_extension:NN}
+% 如果字体名字已经包含扩展名，就不重复加入。
+%    \begin{macrocode}
+\cs_new_protected:Npn \@@_process_extension:NN #1#2
+  { \tl_if_empty:NF #2 { \@@_extension_auxi:NN #1#2 } }
+\cs_new_protected:Npn \@@_extension_auxi:NN #1
+  {
+    \exp_args:Nx \@@_extension_auxi:nNN
+      { \exp_args:No \str_lowercase:n {#1} } #1
+  }
+\cs_new_protected:Npn \@@_extension_auxi:nNN #1
+  {
+    \clist_map_inline:Nn \l_@@_extension_clist
+      {
+        \tl_if_in:nnT { #1 $ } { ##1 $ }
+          { \clist_map_break:n { \use_none:nnn } }
+      }
+    \tl_put_right:No
+  }
+\clist_new:N \l_@@_extension_clist
+\clist_set:Nx \l_@@_extension_clist
+  { \tl_to_str:n { .ttf , .otf , .ttc } }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\setCJKfamilyfont}
+%    \begin{macrocode}
+\NewDocumentCommand \setCJKfamilyfont
+  { +m +O { } +m +O { } }
+  {
+    \use:x
+      {
+        \apfs_set_family:nnn
+          {#1}
+          { \tl_if_blank:nF {#2} { #2 , } #4 }
+          {#3}
+      }
+  }
+%    \end{macrocode}
+% \end{macro}
+%
+%    \begin{macrocode}
+\apfs_set:n { JFM = upschrm-h ; upschrm-v }
+%    \end{macrocode}
+%
+%
+%    \begin{macrocode}
+%</package>
+%    \end{macrocode}
+%
+% \end{implementation}
+%
+% \Finale
+%
+\endinput
