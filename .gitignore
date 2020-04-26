@@ -29,6 +29,7 @@
 *.swp
 *.synctex.gz
 *.synctex.gz(busy)
+*.synctex(busy)
 *.tmp
 *.toc
 *.ver

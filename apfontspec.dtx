@@ -145,7 +145,7 @@ Copyright and Licence
 %</driver>
 % \fi
 %
-% \CheckSum{307}
+% \CheckSum{349}
 % \GetFileId{apfontspec.sty}
 %
 % \title{\bfseries\pkg{apfontspec} 宏包}
@@ -286,7 +286,7 @@ Copyright and Licence
 %    \end{macrocode}
 % \end{macro}
 %
-% \begin{macro}[int]{\apfs_new_feature:nn}
+% \begin{macro}{\apfs_new_feature:nn}
 % 定义字体选项，有横排和直排字体两种形式。|#1| 是选项名称，|#2| 用于命名内部 tl 变量。
 %    \begin{macrocode}
 \cs_new_protected:Npn \apfs_new_feature:nn #1#2
@@ -303,20 +303,38 @@ Copyright and Licence
         #1 .groups:n = feature
       }
   }
+\cs_new_protected:Npn \apfs_new_feature_code:nnn #1#2#3
+  {
+    \tl_new:c { l_@@_yoko_ #2 _tl }
+    \tl_new:c { l_@@_tate_ #2 _tl }
+    \apfs_define:n
+      {
+        #1 .code:n   = #3 ,
+        #1 .groups:n = feature
+      }
+  }
 %    \end{macrocode}
 % \end{macro}
 %
-% \begin{macro}{Index,Script,Language,RawFeature,Scale,JFM,LoadingSetting}
+% \begin{macro}{Index,RawFeature,Scale,JFM,Extension,LoadingSetting}
 % 设置 \file{.ttc} 字体的索引。
 %    \begin{macrocode}
 \apfs_new_feature:nn { Index }          { index }
-\apfs_new_feature:nn { Script }         { script }
-\apfs_new_feature:nn { Language }       { language }
 \apfs_new_feature:nn { RawFeature }     { feature }
 \apfs_new_feature:nn { Scale }          { scale }
 \apfs_new_feature:nn { JFM }            { jfm }
 \apfs_new_feature:nn { Extension }      { ext }
 \apfs_new_feature:nn { LoadingSetting } { loading }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{Script,Language}
+% \opt{Script} 和 \opt{Language} 可接受 Chinese Simplified 等自然名字。
+%    \begin{macrocode}
+\apfs_new_feature_code:nnn { Script } { script }
+  { \@@_extract_alias:nn { script } {#1} }
+\apfs_new_feature_code:nnn { Language } { language }
+  { \@@_extract_alias:nn { language } {#1} }
 %    \end{macrocode}
 % \end{macro}
 %
@@ -404,10 +422,10 @@ Copyright and Licence
 
 % \begin{macro}{\@@_save_fontface:nnn}
 % 保存 \opt{FontFace} 选项的值。\opt{FontFace} 选项的格式与 \pkg{fontspec} 一致。
-% \begin{quote}\ttfamily
-%   FontFace = \Arg{series}\Arg{shape}\Arg{file name}\\
+% \begin{syntax}
+%   FontFace = \Arg{series}\Arg{shape}\Arg{file name}
 %   FontFace = \Arg{series}\Arg{shape}\{ Font = \meta{file name} , \meta{features} \}
-% \end{quote}
+% \end{syntax}
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_save_fontface:nnn
   { \@@_save_shape:Nnnn \c_true_bool }
@@ -647,6 +665,8 @@ Copyright and Licence
 %   \tfont\t=ot:yumin.ttf;vert:upjisr-v
 %   \jfont\t=ot:simsun.ttc[1]:upjisr-h
 %   \jfont\t=ot:SourceHanSansTC-Normal.otf:uprml-h
+% TODO:
+%   GPOS features will be supported in next release.
 % \end{verbatim}
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_construct_fontname:nnnnnnn #1#2#3#4#5#6#7
@@ -692,6 +712,82 @@ Copyright and Licence
   { \tl_to_str:n { .ttf , .otf , .ttc } }
 %    \end{macrocode}
 % \end{macro}
+%
+% \begin{macro}{\@@_extract_alias:nn}
+% 先从表中查询，如果查不到，就不改变。
+%    \begin{macrocode}
+\cs_new_protected:Npn \@@_extract_alias:nn #1#2
+  {
+    \@@_assign:nn {#1} {#2}
+    \@@_extract_alias_aux:ccc
+      { l_@@_ #1 _alias_prop }
+      { l_@@_yoko_ #1 _tl }
+      { l_@@_tate_ #1 _tl }
+  }
+\cs_new_protected:Npn \@@_extract_alias_aux:NNN #1#2#3
+  {
+    \tl_if_eq:NNTF #2#3
+      {
+        \prop_get:NoNT #1 {#2} #2
+          { \tl_set_eq:NN #3#2 }
+      }
+      {
+        \prop_get:NoNT #1 {#2} #2 { }
+        \prop_get:NoNT #1 {#3} #3 { }
+      }
+  }
+\cs_generate_variant:Nn \@@_extract_alias_aux:NNN { ccc }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\newfontscript}
+% \begin{macro}{\apt_def_script_alias:n}
+%    \begin{macrocode}
+\cs_new_protected:Npn \apt_def_script_alias:n
+  { \prop_set_from_keyval:Nn \l_@@_language_alias_prop }
+\NewDocumentCommand \newfontscript { }
+  { \prop_put:Nnn \l_@@_script_alias_prop }
+\prop_new:N \l_@@_script_alias_prop
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
+%
+% \begin{macro}{\newfontlanguage}
+% \begin{macro}{\apt_def_language_alias:n}
+%    \begin{macrocode}
+\cs_new_protected:Npn \apt_def_language_alias:n
+  { \prop_set_from_keyval:Nn \l_@@_language_alias_prop }
+\NewDocumentCommand \newfontlanguage { }
+  { \prop_put:Nnn \l_@@_language_alias_prop }
+\prop_new:N \l_@@_language_alias_prop
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
+%
+%    \begin{macrocode}
+\apt_def_script_alias:n
+  {
+     CJK                   = hani ,
+     CJK~Ideographic       = hani ,
+     Default               = DFLT ,
+     Hangul                = hang ,
+     Hangul~Jamo           = jamo ,
+     Hiragana~and~Katakana = kana ,
+     Hiragana/Katakana     = kana ,
+     Kana                  = kana ,
+  }
+%    \end{macrocode}
+%
+%    \begin{macrocode}
+\apt_def_language_alias:n
+  {
+    Chinese~Hong~Kong      = ZHH ,
+    Chinese~Simplified     = ZHS ,
+    Chinese~Traditional    = ZHT ,
+    Japanese               = JAN ,
+    Korean                 = KOR ,
+  }
+%    \end{macrocode}
 %
 % \begin{macro}{\setCJKfamilyfont}
 %    \begin{macrocode}

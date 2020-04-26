@@ -6,7 +6,7 @@ tdsroot    = "uplatex"
 
 supportdir  =  "./support"
 textfiledir = "./build/unpacked"
-unpackexe   = "xetex"
+unpackexe   = "uptex"
 
 sourcefiles      = {"apfontspec.dtx"}
 unpackfiles      = {"apfontspec.dtx"}
