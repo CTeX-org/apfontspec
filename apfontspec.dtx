@@ -114,6 +114,7 @@ Copyright and Licence
     \file{apfontspec.sty} {\from{\jobname.dtx}{package}}
     \nopreamble\nopostamble
     \usedir{doc/uplatex/apfontspec}
+    \file{apfs-test.tex}  {\from{\jobname.dtx}{test}}
     \file{README.md}      {\from{\jobname.dtx}{readme}}
   }
 
@@ -133,7 +134,7 @@ Copyright and Licence
 \ExplSyntaxOn
 \DeclareDocumentCommand \gitsha { m }
   {
-    \href { https \c_colon_str //github.com/CTeX-org/apfontspec/#1 }
+    \href { https \c_colon_str //github.com/CTeX-org/apfontspec/commit/#1 }
           { rev. ~ \texttt{#1} }
   }
 \ExplSyntaxOff
@@ -145,7 +146,7 @@ Copyright and Licence
 %</driver>
 % \fi
 %
-% \CheckSum{483}
+% \CheckSum{644}
 % \GetFileId{apfontspec.sty}
 %
 % \title{\bfseries\pkg{apfontspec} 宏包}
@@ -613,7 +614,7 @@ Copyright and Licence
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_save_info:nnn #1#2#3
   {
-    \prop_gpop:NnNT \g_@@_font_file_prop {#1} \l_@@_tmp_tl
+    \prop_gpop:NnNT \g_@@_font_file_prop {#1} \l_@@_font_file_tl
       {
         \msg_warning:nnn { apfs } { redefine-family } {#1}
         \@@_remove_defined:n {#1}
@@ -842,8 +843,8 @@ Copyright and Licence
   {
     \tl_gput_right:Nx #1
       {
-        \c_@@_prefix_tl
         \tl_if_empty:nF {#2} { s * [ \fp_eval:n {#2} ] }
+        \c_@@_prefix_tl
         #3
         \tl_if_empty:nF {#4} { [ \int_eval:n {#4} ] }
         \tl_if_empty:nF { #5#6 }
@@ -977,24 +978,168 @@ Copyright and Licence
   }
 %    \end{macrocode}
 %
-% \begin{macro}{\setCJKfamilyfont}
+% 初始设置 JFM 为 upschrm。
 %    \begin{macrocode}
-\NewDocumentCommand \setCJKfamilyfont
-  { +m +O { } +m +O { } }
+\apfs_set:n { JFM = upschrm-h ; upschrm-v }
+%    \end{macrocode}
+%
+% \begin{macro}{\apfs_switch_family:n, \apfs_family:n}
+% 切换字体。
+%    \begin{macrocode}
+\cs_new_protected:Npn \apfs_switch_family:n #1
   {
-    \use:e
+    \prop_get:NnNTF \g_@@_font_file_prop {#1} \l_@@_font_file_tl
+      { \apfs_family:n }
+      { \@@_family_unknown_warning:n }
+      {#1}
+  }
+\cs_generate_variant:Nn \apfs_switch_family:n { e }
+\cs_new_protected:Npn \apfs_family:n
+  { \tl_set:Nn \k@family }
+\tl_new:N \l_@@_font_file_tl
+\cs_new_protected:Npn \@@_family_unknown_warning:n #1
+  {
+    \prop_if_empty:NF \g_@@_family_font_name_prop
       {
-        \apfs_set_family:nnn
-          {#1}
-          { \tl_if_blank:nF {#2} { #2 , } #4 }
-          {#3}
+        \seq_if_in:NnF \g_@@_unknown_family_seq {#1}
+          {
+            \seq_gput_right:Nn \g_@@_unknown_family_seq {#1}
+            \msg_warning:nnn { apfs } { family-unknown } {#1}
+          }
+      }
+  }
+\seq_new:N \g_@@_unknown_family_seq
+\msg_new:nnn { apfs } { family-unknown }
+  {
+    Unknown~CJK~family~`\@@_msg_family_map:n {#1}'~is~being~ignored.\\
+    Try~to~use~`\@@_msg_def_family_map:n {#1}'~to~define~it.
+  }
+\cs_new:Npn \@@_msg_def_family_map:n #1
+  {
+    \str_case_e:nnF {#1}
+      {
+        \CJKrmdefault { \token_to_str:N \setCJKmainfont }
+        \CJKsfdefault { \token_to_str:N \setCJKsansfont }
+        \CJKttdefault { \token_to_str:N \setCJKmonofont }
+      }
+      { \token_to_str:N \setCJKfamilyfont \{ #1 \} }
+    [...]\{...\}
+  }
+\cs_new:Npn \@@_msg_family_map:n #1
+  {
+    \str_case_e:nnF {#1}
+      {
+        \CJKrmdefault { \token_to_str:N \CJKrmdefault }
+        \CJKsfdefault { \token_to_str:N \CJKsfdefault }
+        \CJKttdefault { \token_to_str:N \CJKttdefault }
+      }
+      {#1}
+  }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\@@_pass_args:nnnn}
+% 传递参数，自带展开功能。
+%    \begin{macrocode}
+\cs_new_protected:Npn \@@_pass_args:nnnn #1#2#3#4
+  { \use:e { #1 { \tl_if_blank:nF {#2} { #2 , } #4 } {#3} } }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\@@_preamble_family:n}
+% 用在 \tn{setCJKmainfont} 等主要命令之后，确保导言区有 CJK 字体可用。
+%    \begin{macrocode}
+\cs_new_protected:Npn \@@_preamble_family:n #1
+  {
+    \str_if_eq:eeT {#1} { \CJKfamilydefault }
+      {
+        \tl_set:Nn \kanjifamilydefault { \CJKfamilydefault }
+        \normalfont
       }
   }
 %    \end{macrocode}
 % \end{macro}
 %
+% \begin{macro}{\CJKfamily}
 %    \begin{macrocode}
-\apfs_set:n { JFM = upschrm-h ; upschrm-v }
+\NewDocumentCommand \CJKfamily { m }
+  { \exp_args:Ne \apfs_switch_family:n {#1} \selectfont }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\setCJKfamilyfont}
+%    \begin{macrocode}
+\NewDocumentCommand \setCJKfamilyfont { m O { } m O { } }
+  {
+    \@@_pass_args:nnnn
+      { \apfs_set_family:nnn {#1} } {#2} {#3} {#4}
+  }
+\NewDocumentCommand \newCJKfontfamily { O { } m O { } m O { } }
+  {
+    \tl_set:Nx \l_@@_tmp_tl
+      { \tl_if_blank:nTF {#1} { \cs_to_str:N #2 } {#1} }
+    \cs_new_protected_nopar:Npx #2
+      { \apfs_family:n {#1} \exp_not:N \selectfont }
+    \@@_pass_args:nnnn
+      { \apfs_set_family:nnn { \l_@@_tmp_tl } } {#3} {#4} {#5}
+  }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}[int]{\setCJKmainfont,\setCJKsansfont,\setCJKmonofont}
+%    \begin{macrocode}
+\NewDocumentCommand \setCJKmainfont { O { } m O { } }
+  {
+    \@@_pass_args:nnnn
+      { \apfs_set_family:nnn { \CJKrmdefault } } {#1} {#2} {#3}
+    \tl_set:Nx \mcdefault { \CJKrmdefault }
+    \@@_preamble_family:n { \CJKrmdefault }
+  }
+\NewDocumentCommand \setCJKsansfont { O { } m O { } }
+  {
+    \@@_pass_args:nnnn
+      { \apfs_set_family:nnn { \CJKsfdefault } } {#1} {#2} {#3}
+    \tl_set:Nx \gtdefault { \CJKsfdefault }
+    \@@_preamble_family:n { \CJKsfdefault }
+  }
+\NewDocumentCommand \setCJKmonofont { O { } m O { } }
+  {
+    \@@_pass_args:nnnn
+      { \apfs_set_family:nnn { \CJKttdefault } } {#1} {#2} {#3}
+    \@@_preamble_family:n { \CJKttdefault }
+  }
+\@onlypreamble \setCJKmainfont
+\@onlypreamble \setCJKsansfont
+\@onlypreamble \setCJKmonofont
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{variable}{\CJKrmdefault,\CJKsfdefault,\CJKttdefault,\CJKfamilydefault}
+%    \begin{macrocode}
+\tl_new:N \CJKrmdefault
+\tl_new:N \CJKsfdefault
+\tl_new:N \CJKttdefault
+\tl_new:N \CJKfamilydefault
+\tl_set:Nn \CJKrmdefault { aprm }
+\tl_set:Nn \CJKsfdefault { apsf }
+\tl_set:Nn \CJKttdefault { aptt }
+\tl_set:Nn \CJKfamilydefault { \CJKrmdefault }
+%    \end{macrocode}
+% \end{variable}
+%
+%    \begin{macrocode}
+\cs_new_protected:Npn \apfs@meta@family #1#2#3
+  {
+    \str_if_eq:eeT {#2} {#3}
+      { \prepare@family@series@update@kanji {#1} {#3} }
+  }
+\cs_new_eq:NN \apfs@family \apfs_switch_family:e
+\g@addto@macro \@rmfamilyhook
+  { \apfs@meta@family { mc } { \mcdefault } { \CJKrmdefault } }
+\g@addto@macro \@sffamilyhook
+  { \apfs@meta@family { gt } { \gtdefault } { \CJKsfdefault } }
+\g@addto@macro \@ttfamilyhook
+  { \apfs@family { \CJKttdefault } }
 %    \end{macrocode}
 %
 %
@@ -1005,5 +1150,63 @@ Copyright and Licence
 % \end{implementation}
 %
 % \Finale
+%
+% \endinput
+%
+% \DisableImplementation
+%
+% \begin{implementation}
+%
+%    \begin{macrocode}
+%<*test>
+%% !TeX program  = ApLaTeX
+%% !TeX encoding = UTF-8
+
+\documentclass{article}
+
+\usepackage{apfontspec}
+
+\setCJKmainfont{SourceHanSerif}
+  [
+    Extension           = .ttc,
+    RawFeature          = - ; vert ,
+    UprightFeatures     = { Index = 6  } ,
+    ItalicFeatures      = { Index = 10 } ,
+    SlantedFeatures     = { Index = 14 } ,
+    BoldFeatures        = { Index = 18 } ,
+    BoldItalicFeatures  = { Index = 22 } ,
+    BoldSlantedFeatures = { Index = 26 } ,
+  ]
+
+
+\makeatletter
+\def\TEXT{“中国智造，惠及全球。”}
+\protected@edef\TEXT{%
+  \textup{\TEXT}\par
+  \textit{\TEXT}\par
+  \textsl{\TEXT}\par}
+\protected@edef\TEXT{\begingroup
+  \mdseries\TEXT\par
+  \bfseries\TEXT\par\endgroup}
+\makeatother
+
+\begin{document}
+
+\TEXT
+
+\clearpage
+\begingroup\edef\x{\endgroup
+  \pdfpageheight=\the\pdfpagewidth\space
+  \pdfpagewidth=\the\pdfpageheight\space}\x
+\tate
+
+\TEXT
+
+\end{document}
+%</test>
+%    \end{macrocode}
+%
+% \end{implementation}
+%
 %
 \endinput
