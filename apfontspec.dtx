@@ -72,7 +72,7 @@ Copyright and Licence
 
 \preamble
 
-    Copyright (C) by Qing Lee <sobenlee@gmail.com>
+    Copyright (C) 2020 by Qing Lee <sobenlee@gmail.com>
 -----------------------------------------------------------------
 
     This work may be distributed and/or modified under the
@@ -125,7 +125,7 @@ Copyright and Licence
 %<package>\NeedsTeXFormat{LaTeX2e}
 %<package>\RequirePackage{expl3}
 %<+package>\GetIdInfo$Id$
-%<package>  {CJK Font selection for ApLaTeX}
+%<package>  {CJK Font Selection for ApLaTeX}
 %<package>\ProvidesExplPackage{\ExplFileName}
 %<package>  {\ExplFileDate}{0}{\ExplFileDescription}
 %<*driver>
@@ -134,7 +134,7 @@ Copyright and Licence
 \DeclareDocumentCommand \gitsha { m }
   {
     \href { https \c_colon_str //github.com/CTeX-org/apfontspec/#1 }
-          { rev. \texttt{#1} }
+          { rev. ~ \texttt{#1} }
   }
 \ExplSyntaxOff
 \begin{document}
@@ -145,7 +145,7 @@ Copyright and Licence
 %</driver>
 % \fi
 %
-% \CheckSum{349}
+% \CheckSum{416}
 % \GetFileId{apfontspec.sty}
 %
 % \title{\bfseries\pkg{apfontspec} 宏包}
@@ -220,17 +220,21 @@ Copyright and Licence
 % \end{macro}
 %
 % \begin{macro}{\apfs_define:n, \apfs_set:n,
-%  \apfs_set_filter:nnN, \apfs_set_features:n}
+%  \apfs_set_filter:nn, \apfs_set_features:n,
+%  \apfs_set_size_features:n, \apfs_set_groups:nn}
 %    \begin{macrocode}
 \cs_new_protected:Npn \apfs_define:n
   { \keys_define:nn { apfs } }
 \cs_new_protected:Npn \apfs_set:n
   { \keys_set:nn { apfs } }
-\cs_new_protected:Npn \apfs_set_filter:nnN
-  { \keys_set_filter:nnnN { apfs } }
+\cs_new_protected:Npn \apfs_set_filter:nn
+  { \keys_set_filter:nnn { apfs } }
 \cs_new_protected:Npn \apfs_set_features:n
-  { \keys_set_groups:nnn { apfs } { feature } }
-\cs_generate_variant:Nn \apfs_set_features:n { o }
+  { \keys_set_filter:nnn { apfs } { main , fontname } }
+\cs_new_protected:Npn \apfs_set_size_features:n
+  { \keys_set_filter:nnn { apfs } { main , size } }
+\cs_new_protected:Npn \apfs_set_groups:nn
+  { \keys_set_groups:nnn { apfs } }
 %    \end{macrocode}
 % \end{macro}
 %
@@ -259,30 +263,30 @@ Copyright and Licence
 %    \end{macrocode}
 % \end{variable}
 %
-% \begin{variable}[int]{\l_@@_option_tl}
-% 保存字体选项列表，用于随后定义。
-%    \begin{macrocode}
-\tl_new:N \l_@@_option_tl
-%    \end{macrocode}
-% \end{variable}
-%
 % \begin{macro}{NFSSEncoding}
 % 设置字体的 \pkg{NFSS} 编码名字。
 %    \begin{macrocode}
-\apfs_define:n { NFSSEncoding .code:n = \@@_assign:nn { encoding } {#1} }
+\apfs_define:n
+  {
+    NFSSEncoding   .code:n = \@@_assign:nn { encoding } {#1} ,
+    NFSSEncoding .groups:n = main
+  }
 %    \end{macrocode}
 % \end{macro}
 %
 % \begin{macro}{Font}
-% 用于实现 \opt{FontFace} 选项中的 \opt{Font}。
+% 用于实现 \opt{FontFace} 和 \opt{SizeFeatures} 选项中的 \opt{Font}。
 %    \begin{macrocode}
-\keys_define:nn { apfs / fontname }
+\apfs_define:n
   {
-    Font  .tl_set:N = \l_@@_fontname_tl ,
-    Font .initial:n = \q_no_value
+    Font .tl_set:N = \l_@@_fontname_tl ,
+    Font .groups:n = fontname
   }
-\cs_new_protected:Npn \@@_extract_fontname:nN
-  { \keys_set_known:nnN { apfs / fontname } }
+\cs_new_protected:Npn \@@_extract_fontname:n
+  {
+    \tl_clear:N \l_@@_fontname_tl
+    \apfs_set_groups:nn { fontname }
+  }
 %    \end{macrocode}
 % \end{macro}
 %
@@ -338,7 +342,27 @@ Copyright and Licence
 %    \end{macrocode}
 % \end{macro}
 %
-% 定义选项。
+% \begin{macro}{SizeFeatures}
+% \opt{SizeFeatures} 选项的格式与 \pkg{fontspec} 略有差别。
+% \begin{syntax}
+%   SizeFeatures =
+%  \  \{
+%  \    ...
+%  \    \Arg{size range} \Arg{features} ,
+%  \    \Arg{size range} \{ Font = \meta{file name} , \meta{features} \} ,
+%  \    ...
+%  \  \}
+% \end{syntax}
+%    \begin{macrocode}
+\apfs_define:n
+  {
+    SizeFeatures .clist_set:N = \l_@@_size_features_clist ,
+    SizeFeatures    .groups:n = { feature , size }
+  }
+%    \end{macrocode}
+% \end{macro}
+%
+% 定义主要选项。
 %    \begin{macrocode}
 \apfs_define:n
   {
@@ -354,7 +378,20 @@ Copyright and Licence
     SlantedFeatures     .code:n = \@@_save_features:nnn { md } { sl } {#1} ,
     BoldFeatures        .code:n = \@@_save_features:nnn { bf } { shape } {#1} ,
     BoldItalicFeatures  .code:n = \@@_save_features:nnn { bf } { it } {#1} ,
-    BoldSlantedFeatures .code:n = \@@_save_features:nnn { bf } { sl } {#1}
+    BoldSlantedFeatures .code:n = \@@_save_features:nnn { bf } { sl } {#1} ,
+    FontFace            .groups:n = main ,
+    UprightFont         .groups:n = main ,
+    ItalicFont          .groups:n = main ,
+    SlantedFont         .groups:n = main ,
+    BoldFont            .groups:n = main ,
+    BoldItalicFont      .groups:n = main ,
+    BoldSlantedFont     .groups:n = main ,
+    UprightFeatures     .groups:n = main ,
+    ItalicFeatures      .groups:n = main ,
+    SlantedFeatures     .groups:n = main ,
+    BoldFeatures        .groups:n = main ,
+    BoldItalicFeatures  .groups:n = main ,
+    BoldSlantedFeatures .groups:n = main ,
   }
 %    \end{macrocode}
 %
@@ -366,7 +403,7 @@ Copyright and Licence
   { \@@_assign_auxi:w #3 ; \q_no_value ; \q_stop #1#2 }
 \cs_new_protected:Npn \@@_assign_auxi:w #1 ; #2 ; #3 \q_stop
   {
-    \use:x
+    \use:e
       {
         \@@_assign_auxii:nnNN
           { \tl_trim_spaces:n {#1} }
@@ -428,12 +465,12 @@ Copyright and Licence
 % \end{syntax}
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_save_fontface:nnn
-  { \@@_save_shape:Nnnn \c_true_bool }
+  { \@@_save_shape:Nnnn \@@_assign_fontface:nnn }
 %    \end{macrocode}
 % \end{macro}
 %
 % \begin{macro}{\@@_save_shape:Nnnn}
-% 将选项中设置的字形保存到表中，布尔变量 |#1| 用于标识字形是否是由 \opt{FontFace} 设置的。
+% 将选项中设置的字形保存到表中。
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_save_shape:Nnnn #1#2#3#4
   { \prop_put:Nnn \l_@@_shape_prop { #2/#3 } { #1 {#2} {#3} {#4} } }
@@ -448,7 +485,7 @@ Copyright and Licence
 \cs_new_protected:Npn \@@_save_shape:nnn
   {
     \@@_save_shape_aux:nnn
-      { \@@_save_shape:Nnnn \c_false_bool }
+      { \@@_save_shape:Nnnn \@@_assign_shape:nnn }
   }
 %    \end{macrocode}
 % \end{variable}
@@ -464,7 +501,7 @@ Copyright and Licence
       { \@@_save_features_aux:nnn }
   }
 \cs_new_protected:Npn \@@_save_features_aux:nnn #1#2#3
-  { \prop_put:Nnn \l_@@_features_prop { #1/#2 } {#3} }
+  { \prop_put:Nnn \l_@@_features_prop { #1/#2 } { {#1} {#2} {#3} } }
 \prop_new:N \l_@@_features_prop
 %    \end{macrocode}
 % \end{variable}
@@ -475,7 +512,7 @@ Copyright and Licence
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_save_shape_aux:nnn #1#2#3
   {
-    \use:x
+    \use:e
       {
         \exp_not:n {#1}
           { \use:c { #2 default } }
@@ -493,7 +530,8 @@ Copyright and Licence
     \group_begin:
       \tl_set:Nn \l_@@_family_tl {#1}
       \@@_save_shape:nnn { md } { shape } {#3}
-      \tl_if_blank:nF {#2} { \apfs_set:n {#2} }
+      \tl_if_blank:nF {#2}
+        { \apfs_set_filter:nn { fontname } {#2} }
       \@@_declare_family:nn {#2} {#3}
       \@@_declare_shape:n {#3}
     \group_end:
@@ -512,7 +550,7 @@ Copyright and Licence
   }
 \cs_new_protected:Npn \@@_declare_family_aux:n #1
   {
-    \use:x
+    \use:e
       {
         \apfs_nfss_declare_family:nnn
           { \use:c { l_@@_ #1 _encoding_tl } }
@@ -527,7 +565,9 @@ Copyright and Licence
 % \begin{macro}{\@@_check_duplicate:n}
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_check_duplicate:n #1
-  { }
+  {
+%%  TODO
+  }
 \cs_generate_variant:Nn \@@_check_duplicate:n { o }
 %    \end{macrocode}
 % \end{macro}
@@ -539,6 +579,8 @@ Copyright and Licence
   {
     \prop_map_inline:Nn \l_@@_shape_prop
       { \@@_declare_shape:nNnnnn { ##1 } ##2 {#1} }
+    \prop_if_empty:NF \l_@@_features_prop
+      { \@@_declare_shape_feature:n {#1} }
   }
 %    \end{macrocode}
 % \end{macro}
@@ -549,11 +591,8 @@ Copyright and Licence
 \cs_new_protected:Npn \@@_declare_shape:nNnnnn #1#2#3#4#5#6
   {
     \group_begin:
-      \bool_if:NTF #2
-        { \@@_assign_fontface:nn }
-        { \@@_assign_shape:nnn {#1} }
-        {#5} {#6}
-      \@@_adjust_jfm:
+      #2 {#1} {#5} {#6}
+      \@@_process_size_features:n {#6}
       \@@_declare_shape:nnn { yoko } {#3} {#4}
       \@@_declare_shape:nnn { tate } {#3} {#4}
     \group_end:
@@ -561,34 +600,114 @@ Copyright and Licence
 %    \end{macrocode}
 % \end{macro}
 %
-% \begin{macro}{\@@_assign_fontface:nn}
+% \begin{macro}{\@@_assign_fontface:nnn}
 % 实现 \opt{FontFace} 选项。
 %    \begin{macrocode}
-\cs_new_protected:Npn \@@_assign_fontface:nn #1#2
+\cs_new_protected:Npn \@@_assign_fontface:nnn #1#2#3
   {
-    \@@_extract_fontname:nN {#1} \l_@@_leftover_clist
-    \quark_if_no_value:NTF \l_@@_fontname_tl
-      { \@@_assign_font:nn {#1} {#2} }
+    \@@_extract_fontname:n {#2}
+    \tl_if_empty:NTF \l_@@_fontname_tl
+      { \@@_assign_font:nn {#2} {#3} }
       {
-        \@@_assign_font:on { \l_@@_fontname_tl } {#2}
-        \clist_if_empty:NF \l_@@_leftover_clist
-          { \apfs_set_features:o { \l_@@_leftover_clist } }
+        \@@_assign_font:on { \l_@@_fontname_tl } {#3}
+        \apfs_set_features:n {#2}
       }
+    \prop_remove:Nn \l_@@_features_prop {#1}
   }
 \clist_new:N \l_@@_leftover_clist
 %    \end{macrocode}
 % \end{macro}
 %
-% \begin{macro}{\@@_assign_shape:nnnn}
+% \begin{macro}{\@@_assign_shape:nnn}
 % 实现 \opt{BoldFont} 等选项。
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_assign_shape:nnn #1#2#3
   {
     \@@_assign_font:nn {#2} {#3}
-    \prop_get:NnNT \l_@@_features_prop {#1} \l_@@_tmp_tl
+    \prop_pop:NnNT \l_@@_features_prop {#1} \l_@@_tmp_tl
+      { \exp_after:wN \@@_assign_shape_aux:nnn \l_@@_tmp_tl }
+  }
+\cs_new_protected:Npn \@@_assign_shape_aux:nnn #1#2#3
+  { \tl_if_blank:nF {#3} { \apfs_set_features:n {#3} } }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\@@_declare_shape_feature:n, \@@_assign_feature:nnn}
+% 实现单独的 \opt{BoldFeatures} 等选项。
+%    \begin{macrocode}
+\cs_new_protected:Npn \@@_declare_shape_feature:n #1
+  {
+    \prop_map_inline:Nn \l_@@_features_prop
       {
-        \tl_if_empty:NF \l_@@_tmp_tl
-          { \apfs_set_features:o { \l_@@_tmp_tl } }
+        \@@_declare_shape:nNnnnn { ##1 }
+          \@@_assign_feature:nnn ##2 {#1}
+      }
+  }
+\cs_new_protected:Npn \@@_assign_feature:nnn #1#2#3
+  {
+    \tl_if_blank:nF {#2}
+      {
+        \@@_assign:nn { font } {#3}
+        \apfs_set_features:n {#2}
+      }
+  }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\@@_process_size_features:n}
+% 实现 \opt{SizeFeatures} 选项。
+%    \begin{macrocode}
+\cs_new_protected:Npn \@@_process_size_features:n #1
+  {
+    \clist_if_empty:NTF \l_@@_size_features_clist
+      { \@@_process_size_features_auxi: }
+      { \@@_process_size_features_auxii:n {#1} }
+  }
+\cs_new_protected:Npn \@@_process_size_features_auxi:
+  {
+    \tl_gset:Nn \g_@@_yoko_loading_info_tl { <-> }
+    \tl_gset:Nn \g_@@_tate_loading_info_tl { <-> }
+    \@@_adjust_jfm:
+    \@@_construct_fontname:n { yoko }
+    \@@_construct_fontname:n { tate }
+  }
+\cs_new_protected:Npn \@@_process_size_features_auxii:n #1
+  {
+    \tl_gclear:N \g_@@_yoko_loading_info_tl
+    \tl_gclear:N \g_@@_tate_loading_info_tl
+    \clist_map_inline:Nn \l_@@_size_features_clist
+      { \@@_construct_fontname:nnn ##1 {#1} }
+  }
+\cs_new_protected:Npn \@@_construct_fontname:nnn #1#2#3
+  {
+    \group_begin:
+      \tl_clear:N \l_@@_fontname_tl
+      \apfs_set_size_features:n {#2}
+      \tl_if_empty:NF \l_@@_fontname_tl
+        { \@@_assign_font:on { \l_@@_fontname_tl } {#3} }
+      \@@_adjust_jfm:
+      \tl_gput_right:Nn \g_@@_yoko_loading_info_tl { <#1> }
+      \tl_gput_right:Nn \g_@@_tate_loading_info_tl { <#1> }
+      \@@_construct_fontname:n { yoko }
+      \@@_construct_fontname:n { tate }
+    \group_end:
+  }
+\cs_new_protected:Npn \@@_construct_fontname:n #1
+  {
+    \exp_args:Ncc \@@_process_extension:NN
+      { l_@@_ #1 _font_tl }
+      { l_@@_ #1 _ext_tl }
+    \use:e
+      {
+        \@@_construct_fontname:Nnnnnnnn
+          { \exp_not:c { g_@@_ #1 _loading_info_tl } }
+          { \exp_not:v { l_@@_ #1 _scale_tl } }
+          { \use:c { l_@@_ #1 _font_tl } }
+          { \exp_not:v { l_@@_ #1 _index_tl } }
+          { \use:c { l_@@_ #1 _script_tl } }
+          { \use:c { l_@@_ #1 _language_tl } }
+          { \use:c { l_@@_ #1 _feature_tl } }
+          { \use:c { l_@@_ #1 _jfm_tl } }
       }
   }
 %    \end{macrocode}
@@ -604,39 +723,6 @@ Copyright and Licence
         \tl_put_right:Nn \l_@@_yoko_jfm_tl { -h }
         \tl_put_right:Nn \l_@@_tate_jfm_tl { -v }
       }
-  }
-%    \end{macrocode}
-% \end{macro}
-%
-% \begin{macro}{\@@_declare_shape:nnn}
-% 最后将参数传给 \pkg{NFSS} 的命令。
-%    \begin{macrocode}
-\cs_new_protected:Npn \@@_declare_shape:nnn #1#2#3
-  {
-    \exp_args:Ncc \@@_process_extension:NN
-      { l_@@_ #1 _font_tl }
-      { l_@@_ #1 _ext_tl }
-    \use:x
-      {
-        \@@_construct_fontname:nnnnnnn
-          { \exp_not:v { l_@@_ #1 _scale_tl } }
-          { \use:c { l_@@_ #1 _font_tl } }
-          { \exp_not:v { l_@@_ #1 _index_tl } }
-          { \use:c { l_@@_ #1 _script_tl } }
-          { \use:c { l_@@_ #1 _language_tl } }
-          { \use:c { l_@@_ #1 _feature_tl } }
-          { \use:c { l_@@_ #1 _jfm_tl } }
-      }
-    \use:x
-      {
-        \apfs_nfss_declare_shape:nnnnnn
-          { \use:c { l_@@_ #1 _encoding_tl } }
-          { \l_@@_family_tl }
-          {#2}
-          {#3}
-          { \exp_not:o { \l_@@_loading_info_tl } }
-          { \exp_not:v { l_@@_ #1 _loading_tl } }
-       }
   }
 %    \end{macrocode}
 % \end{macro}
@@ -669,22 +755,22 @@ Copyright and Licence
 %   GPOS features will be supported in next release.
 % \end{verbatim}
 %    \begin{macrocode}
-\cs_new_protected:Npn \@@_construct_fontname:nnnnnnn #1#2#3#4#5#6#7
+\cs_new_protected:Npn \@@_construct_fontname:Nnnnnnnn #1#2#3#4#5#6#7#8
   {
-    \tl_set:Nx \l_@@_loading_info_tl
+    \tl_gput_right:Nx #1
       {
-        <->
         \c_@@_prefix_tl
-        \tl_if_empty:nF {#1} { s * [ \fp_eval:n {#1} ] }
-        #2
-        \tl_if_empty:nF {#3} { [ \int_eval:n {#3} ] }
-        \tl_if_empty:nF { #4#5 }
-          { ( #4 \tl_if_empty:nF {#5} { / #5 } ) }
-        \tl_if_empty:nF {#6} { ; #6 }
-        : #7
+        \tl_if_empty:nF {#2} { s * [ \fp_eval:n {#2} ] }
+        #3
+        \tl_if_empty:nF {#4} { [ \int_eval:n {#4} ] }
+        \tl_if_empty:nF { #5#6 }
+          { ( #5 \tl_if_empty:nF {#6} { / #6 } ) }
+        \tl_if_empty:nF {#7} { ; #7 }
+        : #8
       }
   }
-\tl_new:N \l_@@_font_info_tl
+\tl_new:N \l_@@_yoko_loading_info_tl
+\tl_new:N \l_@@_tate_loading_info_tl
 %    \end{macrocode}
 % \end{macro}
 %
@@ -695,7 +781,7 @@ Copyright and Licence
   { \tl_if_empty:NF #2 { \@@_extension_auxi:NN #1#2 } }
 \cs_new_protected:Npn \@@_extension_auxi:NN #1
   {
-    \exp_args:Nx \@@_extension_auxi:nNN
+    \exp_args:Ne \@@_extension_auxi:nNN
       { \exp_args:No \str_lowercase:n {#1} } #1
   }
 \cs_new_protected:Npn \@@_extension_auxi:nNN #1
@@ -710,6 +796,25 @@ Copyright and Licence
 \clist_new:N \l_@@_extension_clist
 \clist_set:Nx \l_@@_extension_clist
   { \tl_to_str:n { .ttf , .otf , .ttc } }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\@@_declare_shape:nnn}
+% 最后将参数展开后传给 \pkg{NFSS} 的命令。
+%    \begin{macrocode}
+\cs_new_protected:Npn \@@_declare_shape:nnn #1#2#3
+  {
+    \use:e
+      {
+        \apfs_nfss_declare_shape:nnnnnn
+          { \use:c { l_@@_ #1 _encoding_tl } }
+          { \l_@@_family_tl }
+          {#2}
+          {#3}
+          { \exp_not:v { g_@@_ #1 _loading_info_tl } }
+          { \exp_not:v { l_@@_ #1 _loading_tl } }
+      }
+  }
 %    \end{macrocode}
 % \end{macro}
 %
@@ -794,7 +899,7 @@ Copyright and Licence
 \NewDocumentCommand \setCJKfamilyfont
   { +m +O { } +m +O { } }
   {
-    \use:x
+    \use:e
       {
         \apfs_set_family:nnn
           {#1}
