@@ -146,7 +146,7 @@ Copyright and Licence
 %</driver>
 % \fi
 %
-% \CheckSum{770}
+% \CheckSum{815}
 % \GetFileId{apfontspec.sty}
 %
 % \title{\bfseries\pkg{apfontspec} 宏包}
@@ -230,6 +230,8 @@ Copyright and Licence
   { \keys_set:nn { apfs } }
 \cs_new_protected:Npn \apfs_set_filter:nn
   { \keys_set_filter:nnn { apfs } }
+\cs_new_protected:Npn \apfs_set_filter:nnN
+  { \keys_set_filter:nnnN { apfs } }
 \cs_new_protected:Npn \apfs_set_features:n
   { \keys_set_filter:nnn { apfs } { main , fontname } }
 \cs_new_protected:Npn \apfs_set_size_features:n
@@ -288,6 +290,17 @@ Copyright and Licence
   {
     NFSSEncoding   .code:n = \@@_assign:nn { encoding } {#1} ,
     NFSSEncoding .groups:n = main
+  }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{NFSSFamily}
+% 设置字体的 \pkg{NFSS} 族名。
+%    \begin{macrocode}
+\apfs_define:n
+  {
+    NFSSFamily .tl_set:N = \l_@@_family_tl ,
+    NFSSFamily .groups:n = family
   }
 %    \end{macrocode}
 % \end{macro}
@@ -396,6 +409,18 @@ Copyright and Licence
     Expert      = expt ,
     NLC         = nlck ,
     ResetAll    = { }
+  }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{CJKShape}
+% 兼容 \pkg{fontspec}。
+%    \begin{macrocode}
+\apfs_define:n
+  {
+    CJKShape    .meta:n = { KanjiForms = {#1} } ,
+    CJKShape  .groups:n = { feature } ,
+    CJKShape .default:n = { ResetAll }
   }
 %    \end{macrocode}
 % \end{macro}
@@ -784,7 +809,7 @@ Copyright and Licence
 %    \end{macrocode}
 % \end{macro}
 %
-% \begin{macro}[int]{\apfs_set_family:nnn}
+% \begin{macro}{\apfs_set_family:nnn}
 % 主要函数。
 %    \begin{macrocode}
 \cs_new_protected:Npn \apfs_set_family:nnn #1#2#3
@@ -792,13 +817,53 @@ Copyright and Licence
     \group_begin:
       \tl_set:Nn \l_@@_family_tl {#1}
       \@@_save_shape:nnn { md } { shape } {#3}
-      \tl_if_blank:nF {#2}
-        { \apfs_set_filter:nn { fontname } {#2} }
+      \tl_if_blank:nF {#2} { \@@_set_keys:n {#2} }
+      \@@_provide_family_name:n {#3}
       \@@_save_info:onn { \l_@@_family_tl } {#2} {#3}
       \@@_declare_family:
       \@@_declare_shape:n {#3}
     \group_end:
   }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\@@_set_keys:n}
+% 主要目的是不保存 \opt{NFSSFamily} 选项。
+%    \begin{macrocode}
+\cs_new_protected:Npn \@@_set_keys:n #1
+  {
+    \apfs_set_filter:nnN
+      { main , feature } {#1} \l_@@_font_options_clist
+    \exp_args:No \apfs_set:n { \l_@@_font_options_clist }
+  }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\@@_provide_family_name:n}
+% 自动生成 NFSS 族名。
+%    \begin{macrocode}
+\cs_new_protected:Npn \@@_provide_family_name:n #1
+  {
+    \tl_if_empty:NT \l_@@_family_tl
+      { \@@_provide_family_name_aux:n {#1} }
+    \tl_gset_eq:NN \g_apfs_family_tl \l_@@_family_tl
+  }
+\cs_new_protected:Npn \@@_provide_family_name_aux:n #1
+  {
+    \tl_set:Nn \l_@@_family_tl {#1}
+    \tl_remove_all:Nn \l_@@_family_tl { ~ }
+    \prop_gpop:NoNTF \g_@@_family_int_prop
+      { \l_@@_family_tl } \l_@@_tmp_tl
+      {
+        \tl_set:Nx \l_@@_tmp_tl
+          { \int_eval:n { \l_@@_tmp_tl + 1 } }
+      }
+      { \tl_set:Nn \l_@@_tmp_tl { 0 } }
+    \prop_gput:Noo \g_@@_family_int_prop
+      { \l_@@_family_tl } { \l_@@_tmp_tl }
+    \tl_put_right:Nx \l_@@_family_tl { ( \l_@@_tmp_tl ) }
+  }
+\prop_new:N \g_@@_family_int_prop
 %    \end{macrocode}
 % \end{macro}
 %
@@ -881,7 +946,6 @@ Copyright and Licence
         \@@_remove_defined:n {#1}
       }
     \prop_gput:Nnn \g_@@_font_file_prop {#1} {#3}
-    \clist_set:Nn \l_@@_font_options_clist {#2}
     \prop_gput:Nno \g_@@_font_options_prop {#1}
       { \l_@@_font_options_clist }
   }
