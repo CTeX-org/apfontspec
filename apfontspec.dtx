@@ -146,7 +146,7 @@ Copyright and Licence
 %</driver>
 % \fi
 %
-% \CheckSum{881}
+% \CheckSum{923}
 % \GetFileId{apfontspec.sty}
 %
 % \title{\bfseries\pkg{apfontspec} 宏包}
@@ -829,8 +829,10 @@ Copyright and Licence
       \@@_save_info:onn { \l_@@_family_tl } {#2} {#3}
       \@@_declare_family:
       \@@_declare_shape:n {#3}
+      \@@_declare_family_finalise:nn {#2} {#3}
     \group_end:
   }
+\cs_new_eq:NN \@@_declare_family_finalise:nn \use_none:nn
 %    \end{macrocode}
 % \end{macro}
 %
@@ -902,14 +904,18 @@ Copyright and Licence
 %    \begin{macrocode}
 \cs_new_protected:Npn \apfs_declare_family:nnn #1#2#3
   {
+    \@@_declare_family_hook:nnn {#1} {#2} {#3}
     \apfs_nfss_declare_family:nnn {#1} {#2}
       { \apfs_record_rawfont:n {#2} #3 }
   }
-\cs_new_protected:Npn \apfs_declare_shape:nnnnnn #1#2#3#4
+\cs_new_protected:Npn \apfs_declare_shape:nnnnnn #1#2#3#4#5#6
   {
+    \@@_declare_shape_hook:nnnnnn {#1} {#2} {#3} {#4} {#5} {#6}
     \apfs_record_shape:nnnn {#1} {#2} {#3} {#4}
-    \apfs_nfss_declare_shape:nnnnnn {#1} {#2} {#3} {#4}
+    \apfs_nfss_declare_shape:nnnnnn {#1} {#2} {#3} {#4} {#5} {#6}
   }
+\cs_new_eq:NN \@@_declare_family_hook:nnn   \use_none:nnn
+\cs_new_eq:NN \@@_declare_shape_hook:nnnnnn \use_none:nnnnnn
 %    \end{macrocode}
 % \end{macro}
 %
@@ -1474,6 +1480,37 @@ Copyright and Licence
   { \apfs@family { \CJKttdefault } }
 %    \end{macrocode}
 %
+%    \begin{macrocode}
+\DeclareOption { debug } { \bool_gset_true:N \g_@@_debug_bool }
+\bool_new:N \g_@@_debug_bool
+\ProcessOptions \scan_stop:
+%    \end{macrocode}
+%
+%    \begin{macrocode}
+\bool_if:NF \g_@@_debug_bool
+  { \file_input_stop: }
+%    \end{macrocode}
+%
+%    \begin{macrocode}
+\cs_gset_protected:Npn \@@_declare_family_finalise:nn #1#2
+  {
+    \seq_gput_left:Nn \g_@@_debug_seq { Options {#1} }
+    \seq_gput_left:Nn \g_@@_debug_seq { Font {#2} }
+    \seq_show:N \g_@@_debug_seq
+    \seq_gclear:N \g_@@_debug_seq
+  }
+\cs_gset_protected:Npn \@@_declare_family_hook:nnn #1#2#3
+  {
+    \seq_gput_right:Nn \g_@@_debug_seq
+      { Family {#1} {#2} {#3} }
+  }
+\cs_gset_protected:Npn \@@_declare_shape_hook:nnnnnn #1#2#3#4#5#6
+  {
+    \seq_gput_right:Nn \g_@@_debug_seq
+      { Shape {#1} {#2} {#3} {#4} {#5} {#6} }
+  }
+\seq_new:N \g_@@_debug_seq
+%    \end{macrocode}
 %
 %    \begin{macrocode}
 %</package>
